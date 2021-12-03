@@ -228,7 +228,12 @@ def optimalSelect(map):
         map[linie][coloana] = 1
         return linie * 3 + coloana
 
-# def semiRandomSelect(map):
+def semiRandomSelect(map):
+    if(len(availablePositions(map))%4==0):
+        return optimalSelect(map)
+    else:
+        print("random")
+        return randomSelect(map)
 
 
 def generateMap():
@@ -286,8 +291,8 @@ def generateMap():
                         count += 1
         if turn % 2 == 0 and turn <= 8 and stopJoc == 0:
             # spot = randomSelect(map)  # pune random
-            # spot = semiRandomSelect(map)  # pune random1/2 istet 1/2
-            spot = optimalSelect(map)#pune istet
+            spot = semiRandomSelect(map)  # pune random1/2 istet 1/2
+            # spot = optimalSelect(map)#pune istet
             print(spot)
             rect = addZero(boxes, map, spot, imagesToDisplay, redSquare, clickedInThePast)
             turn += 1
