@@ -1,9 +1,11 @@
 import numpy.random
 import pygame
+from pygame import font
 
 
 def drawLines(display, color, width, height, lineWidth=1):
     pygame.draw.line(display, (0, 0, 0), (width * 0.75, 0), (width * 0.75, height), 5)
+    rightWidth = 0.25 * width
     width -= 0.25 * width  # loc de settings
     paddingX = 0.15 * width
     paddingY = 0.10 * height
@@ -13,6 +15,7 @@ def drawLines(display, color, width, height, lineWidth=1):
     bottomMargin = height - paddingY
     mapHeight = bottomMargin - topMargin
     mapWidth = rightMargin - leftMargin
+
     pygame.draw.line(display, color, (leftMargin, mapHeight / 3 + topMargin), (rightMargin, mapHeight / 3 + topMargin),
                      lineWidth)
     pygame.draw.line(display, color, (leftMargin, (mapHeight * 2) / 3 + topMargin),
@@ -90,18 +93,17 @@ def randomSelect(map):
 
 def cautCastigator(map):
     castigator = verifStareCastig(map)
+    winnerFound = 0
     if castigator == 1:
         print("Jucatorul a castigat!")
         winnerFound = 1
     elif castigator == 2:
         print("Calculatorul a castigat!")
-        winnerFound = 1
+        winnerFound = 2
     elif castigator == 0 and len(availablePositions(map)) == 0:
+        winnerFound = 3
         print("Remiza!")
-    if (castigator > 0):
-        return 1
-    else:
-        return 0
+    return winnerFound
 
 
 def availablePositions(map):
@@ -155,7 +157,7 @@ def needsMove(map, player):
             col = ind
     if takenSpots == 2 and lin != -1:
         return (lin, col)
-    #diag principala
+    # diag principala
     takenSpots = 0
     lin = -1
     col = -1
@@ -167,20 +169,25 @@ def needsMove(map, player):
             col = ind
     if takenSpots == 2 and lin != -1:
         return (lin, col)
-    #diagSecundara
+    # diagSecundara
     return (-1, -1)
 
 
 def takeCorner(map):
+    empty = []
     if map[0][0] == 0:
-        return (0, 0)
+        empty.append((0, 0))
     if map[0][2] == 0:
-        return (0, 2)
+        empty.append((0, 2))
     if map[2][0] == 0:
-        return (2, 0)
+        empty.append((2, 0))
     if map[2][2] == 0:
-        return (2, 2)
-    return (-1, -1)
+        empty.append((2, 2))
+    if len(empty) > 0:
+        indice = numpy.random.randint(0, len(empty))
+        return empty[indice]
+    else:
+        return (-1, -1)
 
 
 def takeCenter(map):
@@ -189,16 +196,22 @@ def takeCenter(map):
     else:
         return (-1, -1)
 
+
 def takeSides(map):
+    empty = []
     if map[0][1] == 0:
-        return (0, 1)
+        empty.append((0, 1))
     if map[1][0] == 0:
-        return (1, 0)
+        empty.append((1, 0))
     if map[1][2] == 0:
-        return (1, 2)
+        empty.append((1, 2))
     if map[2][1] == 0:
-        return (2, 1)
-    return (-1, -1)
+        empty.append((2, 1))
+    if len(empty) > 0:
+        indice = numpy.random.randint(0, len(empty))
+        return empty[indice]
+    else:
+        return (-1, -1)
 
 
 def optimalSelect(map):
@@ -212,14 +225,14 @@ def optimalSelect(map):
         print("linieJucator")
         map[linie][coloana] = 1
         return linie * 3 + coloana
+    (linie, coloana) = takeSides(map)
+    if (linie, coloana) != (-1, -1):
+        print("Lateral")
+        map[linie][coloana] = 1
+        return linie * 3 + coloana
     (linie, coloana) = takeCorner(map)
     if (linie, coloana) != (-1, -1):
         print("Colt")
-        map[linie][coloana] = 1
-        return linie * 3 + coloana
-    (linie, coloana) = takeSides(map)
-    if (linie, coloana) != (-1, -1):
-        print("Centru")
         map[linie][coloana] = 1
         return linie * 3 + coloana
     (linie, coloana) = takeCenter(map)
@@ -228,12 +241,54 @@ def optimalSelect(map):
         map[linie][coloana] = 1
         return linie * 3 + coloana
 
+
 def semiRandomSelect(map):
-    if(len(availablePositions(map))%4==0):
+    if len(availablePositions(map)) % 4 == 0:
         return optimalSelect(map)
     else:
         print("random")
         return randomSelect(map)
+
+
+def displayScore(score, mainDisplay, width, height):
+    rightWidth = 0.25 * width
+    width -= 0.25 * width  # loc de settings
+    paddingX = 0.15 * rightWidth
+    paddingY = 0.20 * height
+
+    scoreString = str(score)
+    scoreTest = 'Score: ' + scoreString
+    myfont = pygame.font.SysFont('Comic Sans MS', 30)
+    textsurface = myfont.render(scoreTest, False, (0, 0, 0))
+    mainDisplay.blit(textsurface, (paddingX + width, paddingY))
+
+
+def displayPlayAgain(mainDisplay, width, height):
+    res = []
+    rightWidth = 0.25 * width
+    width -= 0.25 * width  # loc de settings
+    paddingX = 0.15 * rightWidth
+    paddingY = 0.50 * height
+
+    playAgainText = 'Doriti sa mai jucati?'
+    myfont = pygame.font.SysFont('Comic Sans MS', 15)
+    textsurface = myfont.render(playAgainText, False, (0, 0, 0))
+    mainDisplay.blit(textsurface, (paddingX + width, paddingY))
+    Yes = 'Da'
+    myfont = pygame.font.SysFont('Comic Sans MS', 25)
+    textsurface = myfont.render(Yes, False, (0, 0, 0))
+    rectDa = textsurface.get_rect()
+    mainDisplay.blit(textsurface, (paddingX / 2 + width, paddingY + 0.25 * paddingY))
+    No = 'Nu'
+    myfont = pygame.font.SysFont('Comic Sans MS', 25)
+    textsurface = myfont.render(No, False, (0, 0, 0))
+    rectNu = textsurface.get_rect()
+    mainDisplay.blit(textsurface, (paddingX + rightWidth * 0.55 + width, paddingY + 0.25 * paddingY))
+    res.append(pygame.Rect(paddingX / 2 + width, paddingY + 0.25 * paddingY, rectDa.width,
+                           rectDa.height))
+    res.append(pygame.Rect(paddingX + rightWidth * 0.55 + width, paddingY + 0.25 * paddingY, rectNu.width,
+                           rectNu.height))
+    return res
 
 
 def generateMap():
@@ -269,7 +324,12 @@ def generateMap():
            [0, 0, 0],
            [0, 0, 0]]
     stopJoc = 0
+    score = 0
+    responseBoxes = []
+    waitForAnswer = 0
+    justRestarted = 0
     while not crashed:
+        justRestarted = 0
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 crashed = True
@@ -289,16 +349,60 @@ def generateMap():
                                 stopJoc = cautCastigator(map)
                                 clickedInThePast.append(box)
                         count += 1
-        if turn % 2 == 0 and turn <= 8 and stopJoc == 0:
+            if event.type == pygame.MOUSEBUTTONDOWN and stopJoc == 3:
+                if event.button == 1:
+                    count = 1
+                    for box in responseBoxes:
+                        if box.collidepoint(event.pos):
+                            if count == 1:
+                                print("O noua runda incepe!")
+                                map = [[0, 0, 0],
+                                       [0, 0, 0],
+                                       [0, 0, 0]]
+                                clickedInThePast = []
+                                imagesToDisplay = []
+                                turn = 1
+                                justRestarted = 1
+                                stopJoc=0
+                            else:
+                                print("Nu")
+                                crashed=True
+                                stopJoc = 0
+                                break
+                        count += 1
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_r:
+                    print("Am dat restart la joc")
+                    map = [[0, 0, 0],
+                           [0, 0, 0],
+                           [0, 0, 0]]
+                    clickedInThePast = []
+                    imagesToDisplay = []
+                    turn = 1
+                    justRestarted = 1
+                    score = 0
+                    stopJoc=0
+                    responseBoxes=[]
+        if turn % 2 == 0 and turn <= 8 and stopJoc == 0 and justRestarted == 0:
             # spot = randomSelect(map)  # pune random
-            spot = semiRandomSelect(map)  # pune random1/2 istet 1/2
-            # spot = optimalSelect(map)#pune istet
+            # spot = semiRandomSelect(map)  # pune random1/2 istet 1/2
+            spot = optimalSelect(map)  # pune istet
             print(spot)
             rect = addZero(boxes, map, spot, imagesToDisplay, redSquare, clickedInThePast)
             turn += 1
             stopJoc = cautCastigator(map)
-        mainDisplay.fill(grey)
 
+        mainDisplay.fill(grey)
+        if stopJoc == 1:
+            score += 100
+            stopJoc = 3
+        if stopJoc == 2:
+            score -= 50
+            stopJoc = 3
+        if stopJoc==3:
+            responseBoxes = displayPlayAgain(mainDisplay, displayWidth, displayHeight)
+
+        displayScore(score, mainDisplay, displayWidth, displayHeight)
         drawLines(mainDisplay, faintGreen, displayWidth, displayHeight, 5)
         for (image, imageType) in imagesToDisplay:
             if imageType == 1:
@@ -307,6 +411,39 @@ def generateMap():
             else:
                 imgZero = pygame.transform.scale(z, (image.width, image.height))
                 mainDisplay.blit(imgZero, image)
+
+        # if stopJoc != 0:
+        #     waitForAnswer = 1
+        # if waitForAnswer == 1:
+        #     count = 0
+        #     print("Astept raspunsul")
+        #     # search for click to accept next turn
+        #     while waitForAnswer == 1:
+        #         for event in pygame.event.get():
+        #             if event.type == pygame.QUIT:
+        #                 waitForAnswer = 0
+        #                 crashed = True
+        #             if event.type == pygame.MOUSEBUTTONDOWN:
+        #                 if event.button == 1:
+        #                     for box in responseBoxes:
+        #                         count += 1
+        #                         if box.collidepoint(event.pos):
+        #                             if count == 1:  # DA
+        #                                 print("Da")
+        #                                 waitForAnswer = 0
+        #                                 print("Am dat restart la joc")
+        #                                 map = [[0, 0, 0],
+        #                                        [0, 0, 0],
+        #                                        [0, 0, 0]]
+        #                                 clickedInThePast = []
+        #                                 imagesToDisplay = []
+        #                                 turn = 1
+        #                                 justRestarted = 1
+        #                                 waitForAnswer = 0
+        #                             else:  # NU
+        #                                 print("Nu")
+        #                                 waitForAnswer = 0
+
         pygame.display.update()
         clock.tick(60)
 
