@@ -244,7 +244,7 @@ def optimalSelect(map):
 
 def semiRandomSelect(map):
     if len(availablePositions(map)) % 4 == 0:
-        return optimalSelect(map)
+        return findBestMove(map)
     else:
         print("random")
         return randomSelect(map)
@@ -290,7 +290,60 @@ def displayPlayAgain(mainDisplay, width, height):
                            rectNu.height))
     return res
 
+def giveScoreForComputer(statusJoc):
+    if statusJoc==2:
+        return 100
+    elif statusJoc==1:
+        return -500
+    return 0
 
+def statusJoc(map):
+    castigator = verifStareCastig(map)
+    if castigator == 1:
+        return 1
+    elif castigator == 2:
+        return 2
+    elif castigator == 0 and len(availablePositions(map)) == 0:
+        return 3
+    return 0
+
+def minmax(map, depth, computer):
+    stopJoc = statusJoc(map)
+    if stopJoc != 0:  # cineva a castigat
+        return giveScoreForComputer(stopJoc)-depth
+
+    if computer:  # maximizez pentru calculator
+        bestVal = -numpy.inf
+        emptySpots = availablePositions(map)
+        for (x, y) in emptySpots:
+            map[x][y] = 2
+            val = minmax(map, depth + 1, False)
+            bestVal = max(bestVal, val)
+            map[x][y] = 0
+    else:  # minimizez pentru player
+        bestVal = numpy.inf
+        emptySpots = availablePositions(map)
+        for (x, y) in emptySpots:
+            map[x][y] = 1
+            val = minmax(map, depth + 1, True)
+            bestVal = min(bestVal, val)
+            map[x][y] = 0
+    return bestVal-depth
+
+def findBestMove(map):
+    bestval=-1000
+    bestmove=(-1,-1)
+
+    emptySpaces=availablePositions(map)
+    for (x,y)in emptySpaces:
+        map[x][y]=2
+        res=minmax(map,0,True)
+        map[x][y]=0
+        if res>bestval:
+            bestval=res
+            bestmove=(x,y)
+    (a,b)=bestmove
+    return a*3+b
 def generateMap():
     pygame.init()
     displayWidth = 800
@@ -363,10 +416,10 @@ def generateMap():
                                 imagesToDisplay = []
                                 turn = 1
                                 justRestarted = 1
-                                stopJoc=0
+                                stopJoc = 0
                             else:
                                 print("Nu")
-                                crashed=True
+                                crashed = True
                                 stopJoc = 0
                                 break
                         count += 1
@@ -381,12 +434,15 @@ def generateMap():
                     turn = 1
                     justRestarted = 1
                     score = 0
-                    stopJoc=0
-                    responseBoxes=[]
+                    stopJoc = 0
+                    responseBoxes = []
         if turn % 2 == 0 and turn <= 8 and stopJoc == 0 and justRestarted == 0:
             # spot = randomSelect(map)  # pune random
             # spot = semiRandomSelect(map)  # pune random1/2 istet 1/2
-            spot = optimalSelect(map)  # pune istet
+            # spot = optimalSelect(map)  # pune istet(facut de mine)
+
+            spot=findBestMove(map)#pune istet (minmax)
+
             print(spot)
             rect = addZero(boxes, map, spot, imagesToDisplay, redSquare, clickedInThePast)
             turn += 1
@@ -399,7 +455,7 @@ def generateMap():
         if stopJoc == 2:
             score -= 50
             stopJoc = 3
-        if stopJoc==3:
+        if stopJoc == 3:
             responseBoxes = displayPlayAgain(mainDisplay, displayWidth, displayHeight)
 
         displayScore(score, mainDisplay, displayWidth, displayHeight)
